@@ -24,18 +24,18 @@ enum Operation
     CREATE_OPERATION = 4
 };
 
-struct Payload
+typedef struct Payload
 {
     int sequenceNumber;  // Request Number; Unique for each client request
     int operationNumber; // Operation Number
     char payload[256];   // Graph FileName
-};
+} payload;
 
 // Message Structure
-struct Message
+typedef struct Message
 {
     long MessageType;
-    struct Payload payload;
-};
+    payload p;
+} message;
 
 #endif // GRAPHDB_STRUCTS.h
