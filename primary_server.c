@@ -126,8 +126,14 @@ int HandleRequest(void *p, message m, int msg_id)
 
 	// Send Message
 	strcpy(load.payload, returnStr);
-	m.MessageType = ToClient;
 	m.p = load;
+
+	// Send To Load balancer
+	m.MessageType = ToLoadReceiver;
+	int sendRes = msgsnd(msg_id, &m, sizeof(m), 0);
+
+	// Send To Client
+	m.MessageType = ToClient;
 	int sendRes = msgsnd(msg_id, &m, sizeof(m), 0);
 
 	return 0;
