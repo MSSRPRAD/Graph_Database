@@ -8,6 +8,7 @@
 #include <sys/msg.h>
 #include <errno.h>
 #include <pthread.h>
+#include <limits.h>
 
 typedef struct Payload
 {
@@ -68,8 +69,50 @@ int main(int argc, char *argv[])
 		 printf(
             "\nRecieved message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n",m.mtype ,m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
 
+		if(m.payload.sequence_number == INT_MAX){
+			m.mtype = 2;
+			int sendRes = msgsnd(msg_id, &m, sizeof(m.payload), 0);
 
-		m.mtype = 4;
+			// Error Handling
+			if (sendRes == -1)
+			{
+				perror("Load Balancer could not send message");
+				exit(1);
+			}
+
+			m.mtype = 3;
+			sendRes = msgsnd(msg_id, &m, sizeof(m.payload), 0);
+
+			// Error Handling
+			if (sendRes == -1)
+			{
+				perror("Load Balancer could not send message");
+				exit(1);
+			}
+
+			m.mtype = 4;
+			sendRes = msgsnd(msg_id, &m, sizeof(m.payload), 0);
+
+			// Error Handling
+			if (sendRes == -1)
+			{
+				perror("Load Balancer could not send message");
+				exit(1);
+			}
+
+			msgctl(msg_id, IPC_RMID, NULL);
+			exit(0);
+		}
+
+		if(m.payload.operation_number == 1 || m.payload.operation_number == 2){
+			m.mtype = 2;
+		}
+		else if(m.payload.sequence_number % 2){
+			m.mtype = 3;
+		}
+		else{
+			m.mtype = 4;
+		}
 
 		// Send To Server (Either Primary or Secondary)
 		int sendRes = msgsnd(msg_id, &m, sizeof(m.payload), 0);

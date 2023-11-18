@@ -9,6 +9,7 @@
 #include <sys/shm.h>
 #include <errno.h>
 #include <pthread.h>
+#include <limits.h>
 
 #define SHARED_MEMORY_SIZE 1024
 #define MAX_NODES 10
@@ -122,22 +123,17 @@ void *HandleRequest(void *params)
 	// Remove the shared memory segment (optional)
 	shmctl(shmid, IPC_RMID, NULL);
 
-	// Send Message
+	m.mtype = 5;
+	int sendRes = msgsnd(msg_id, &m, sizeof(m.payload), 0);
 
-	// // Send To Load balancer
-	// m.mtype = 1;
-	// int sendRes = msgsnd(msg_id, &m, sizeof(m), 0);
+	// Error Handling
+	if (sendRes == -1)
+	{
+		perror("Message could not be sent by client");
+		exit(1);
+	}
 
-	// // Send To Client
-	// m.mtype = 5;
-	// sendRes = msgsnd(msg_id, &m, sizeof(m), 0);
-
-	// // Error Handling
-	// if (sendRes == -1)
-	// {
-	// 	perror("Server could not send message");
-	// 	exit(1);
-	// }
+	printf("Sent message: %s", m.payload.graph_file_name);
 }
 
 int main(int argc, char *argv[])
@@ -157,6 +153,9 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	pthread_t threads[1000];
+	int idx = 0;
+
 	while (true)
 	{
 		Message m;
@@ -170,6 +169,16 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
+
+
+		if(m.payload.sequence_number==INT_MAX){
+		for (int i = 0; i < idx; i++)
+		{
+			pthread_join(threads[i], NULL);
+		}
+		exit(0);
+		}
+
 		printf("\nReceived message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n", m.mtype, m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
 
 		pthread_t thread;
@@ -180,6 +189,6 @@ int main(int argc, char *argv[])
 		params.msg_id = msg_id;
 
 		pthread_create(&thread, NULL, (void *)HandleRequest, (void *)&params);
-		pthread_join(thread, NULL);
+		threads[idx++] = thread;
 	}
 }
