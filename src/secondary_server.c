@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
     }
 
     // Key for the message queue (make sure it matches the key used by the load balancer)
-    key_t key = ftok("msgq", 65);
+    key_t key = ftok("chek", 65);
 
     // Create or get the message queue
     int msg_id = msgget(key, 0666);

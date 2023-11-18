@@ -7,6 +7,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <errno.h>
+#include <limits.h>
 #include <pthread.h>
 
 typedef struct Payload
@@ -36,34 +37,34 @@ int readerCount[20] = {0};
 
 void *HandleRequest(void *params)
 {
-	argParams arguments = *(argParams *)params;
-	Message m = arguments.m;
-	int msg_id = arguments.msg_id;
-	Payload load = m.payload;
+	// argParams arguments = *(argParams *)params;
+	// Message m = arguments.m;
+	// int msg_id = arguments.msg_id;
+	// Payload load = m.payload;
 
-	int sequenceNumber = load.sequence_number;
-	int operationNumber = load.operation_number;
-	char *GraphFileName = load.graph_file_name;
+	// int sequenceNumber = load.sequence_number;
+	// int operationNumber = load.operation_number;
+	// char *GraphFileName = load.graph_file_name;
 
-	int reader;
+	// int reader;
 
-	int len = strlen(GraphFileName);
-	int val;
-	if (len == 7)
-	{
-		char num[3];
-		num[0] = *(GraphFileName + 1);
-		num[1] = *(GraphFileName + 2);
-		num[2] = '\0';
-		val = atoi(num);
-	}
-	else
-	{
-		char num[2];
-		num[0] = *(GraphFileName + 1);
-		num[1] = '\0';
-		val = atoi(num);
-	}
+	// int len = strlen(GraphFileName);
+	// int val;
+	// if (len == 7)
+	// {
+	// 	char num[3];
+	// 	num[0] = *(GraphFileName + 1);
+	// 	num[1] = *(GraphFileName + 2);
+	// 	num[2] = '\0';
+	// 	val = atoi(num);
+	// }
+	// else
+	// {
+	// 	char num[2];
+	// 	num[0] = *(GraphFileName + 1);
+	// 	num[1] = '\0';
+	// 	val = atoi(num);
+	// }
 
 	// if (operationNumber == 1 || operationNumber == 2)
 	// {
@@ -89,13 +90,13 @@ void *HandleRequest(void *params)
 	// m.mtype = 2;
 
 	// Send To Server (Either Primary or Secondary)
-	int sendRes = msgsnd(msg_id, &m, sizeof(m), 0);
-	// Error Handling
-	if (sendRes == -1)
-	{
-		perror("Load Balancer could not send message");
-		exit(1);
-	}
+	// int sendRes = msgsnd(msg_id, &m, sizeof(m), 0);
+	// // Error Handling
+	// if (sendRes == -1)
+	// {
+	// 	perror("Load Balancer could not send message");
+	// 	exit(1);
+	// }
 
 	// // Receive Message
 	// int fetchRes = msgrcv(msg_id, &m, sizeof(m), ToLoadReceiver, 0);
@@ -129,8 +130,9 @@ int main(int argc, char *argv[])
 	int msg_id;
 
 	// Create Shared Message Queuep
-	key = ftok("msgq", 65);
+	key = ftok("chek", 65);
 	msg_id = msgget(key, 0666 | IPC_CREAT);
+
 
 	// Error Handling
 	if (msg_id == -1)
@@ -158,22 +160,43 @@ int main(int argc, char *argv[])
 		if (fetchRes == -1)
 		{
 			perror("Load Balancer could not receive message");
+			msgctl(msg_id,IPC_RMID,NULL);
 			exit(1);
 		}
+
+		if(m.payload.sequence_number == INT_MAX){
+			msgctl(msg_id,IPC_RMID,NULL);
+			exit(0);
+		}
+
 
 		printf(
 			"\nRecieved message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n", m.mtype, m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
 
-		pthread_t thread;
-		pthread_attr_t thread_attr;
+		m.mtype = 3;
 
-		argParams params;
-		params.m = m;
-		params.msg_id = msg_id;
+		int sendRes = msgsnd(msg_id, &m, sizeof(m), 0);
+		// Error Handling
+		if (sendRes == -1)
+		{
+			perror("Load Balancer could not send message");
+			exit(1);
+		}
 
-		pthread_create(&thread, NULL, (void *)HandleRequest, (void *)&params);
-		pthread_join(thread, NULL);
+
+		// pthread_t thread;
+		// pthread_attr_t thread_attr;
+
+		// argParams params;
+		// params.m = m;
+		// params.msg_id = msg_id;
+
+		// pthread_create(&thread, NULL, (void *)HandleRequest, (void *)&params);
+		// pthread_join(thread, NULL);
 	}
+
+
+	msgctl(msg_id,IPC_RMID,NULL);
 
 	return 0;
 }

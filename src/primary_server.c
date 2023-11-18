@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 	int msg_id;
 
 	// Create Shared Message Queue
-	key = ftok("msgq", 65);
+	key = ftok("chec", 65);
 	msg_id = msgget(key, 0666);
 
 	// Error Handling

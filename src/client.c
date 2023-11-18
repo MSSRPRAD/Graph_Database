@@ -37,7 +37,7 @@ int main()
     int msgid;
 
     // Get Shared Message Queue
-    key = ftok("msgq", 65);
+    key = ftok("chek", 65);
     msgid = msgget(key, 0666);
 
     //    key_t shared_memory_key = ftok("shmfile", 65);
