@@ -56,8 +56,10 @@ int main()
         {
             Message m;
             m.mtype = __INT16_MAX__;
-            //strcpy(m., "");
-            //payload
+            strcpy(m.payload.sequence_number, "1001");
+            strcpy(m.payload.operation_number, "1002");
+            strcpy(m.payload.graph_file_name, "lmaoXD");
+            
             // Send message
             int sendRes = msgsnd(msgid, &m, sizeof(m), 0);
 
@@ -67,6 +69,10 @@ int main()
                 perror("Cleanup could not send message to message queue.");
                 exit(1);
             }
+
+            //load balancer sleeps for 5 seconds 
+            sleep(5);
+            
             exit(0);
         }
         else if (strcmp(terminate, "N") == 0)
