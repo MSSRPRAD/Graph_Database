@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
 
 		if (m.payload.sequence_number == INT_MAX)
 		{
+			printf("hi");
 			m.mtype = 2;
 			int sendRes = msgsnd(msg_id, &m, sizeof(m.payload), 0);
 

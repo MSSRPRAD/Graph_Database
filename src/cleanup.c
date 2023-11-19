@@ -21,7 +21,6 @@ typedef struct Message
     long mtype;
     Payload payload;
 } Message;
-
 int main()
 {
     char terminate[100];
@@ -51,11 +50,13 @@ int main()
         {
             Message m;
             m.mtype = 1;
-            m.payload.sequence_number = INT_MAX;
-            m.payload.operation_number = 0;
-            strcpy(m.payload.graph_file_name, "hello");
+            Payload p;
+            p.operation_number = 0;
+            strcpy(p.graph_file_name, "hello");
+            p.sequence_number = INT_MAX;
+            m.payload = p;
             // Send message
-            int sendRes = msgsnd(msgid, &m, sizeof(m), 0);
+            int sendRes = msgsnd(msgid, &m, sizeof(m.payload), 0);
 
             // Error Handling
             if (sendRes == -1)
