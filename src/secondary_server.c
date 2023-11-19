@@ -16,14 +16,14 @@ typedef struct Payload
 {
     int sequence_number;
     int operation_number;
-    char graph_file_name[50];
-    int result[50];
+    char graph_file_name[1024];
+    int result[1024];
 } Payload;
 
 typedef struct
 {
-	int nodes;
-	int adjacencyMatrix[MAX_NODES][MAX_NODES];
+    int nodes;
+    int adjacencyMatrix[MAX_NODES][MAX_NODES];
 } SharedData;
 
 // Message Structure Definition
@@ -33,19 +33,23 @@ typedef struct Message
     Payload payload;
 } Message;
 
-int **allocateMatrix(int n){
+int **allocateMatrix(int n)
+{
     int **matrix = (int **)malloc(n * sizeof(int *));
-    for (int i = 0; i < n; i++){
-        matrix[i] = (int *)malloc (n * sizeof(int));
+    for (int i = 0; i < n; i++)
+    {
+        matrix[i] = (int *)malloc(n * sizeof(int));
     }
     return matrix;
 }
 
-int** read_file(char *file_name, int *n){
+int **read_file(char *file_name, int *n)
+{
 
     FILE *file = fopen(file_name, "r");
 
-    if(file==NULL){
+    if (file == NULL)
+    {
         perror("Error opening file");
         exit(1);
     }
@@ -53,7 +57,6 @@ int** read_file(char *file_name, int *n){
     fscanf(file, "%d", n);
 
     int **Adj = allocateMatrix(*n);
-
 
     for (int i = 0; i < (*n); i++)
     {
@@ -68,7 +71,8 @@ int** read_file(char *file_name, int *n){
     return Adj;
 }
 
-void printAdj(int **Adj, int n){
+void printAdj(int **Adj, int n)
+{
     printf("\n");
     fflush(stdout);
 
@@ -77,17 +81,16 @@ void printAdj(int **Adj, int n){
         for (int j = 0; j < n; j++)
         {
             printf("%d ", Adj[i][j]);
-        fflush(stdout);
-
+            fflush(stdout);
         }
-    printf("\n");
+        printf("\n");
         fflush(stdout);
-
     }
     return;
 }
 
-typedef struct Util {
+typedef struct Util
+{
     int **Adj;
     int *Vis;
     int *res;
@@ -110,7 +113,8 @@ void *recursion(void *params)
     int flag = true;
     for (int v = 0; v < n; v++)
     {
-        if(Adj[u][v] && !Vis[v]){
+        if (Adj[u][v] && !Vis[v])
+        {
             flag = false;
             pthread_t tid;
             Util *new_util = (Util *)malloc(sizeof(Util));
@@ -125,8 +129,8 @@ void *recursion(void *params)
         }
     }
 
-
-    if(flag){
+    if (flag)
+    {
         for (int i = 0; i < n; i++)
         {
             if (util->res[i] == -1)
@@ -140,35 +144,39 @@ void *recursion(void *params)
     fflush(stdout);
 }
 
-typedef struct dfs_utils {
+typedef struct dfs_utils
+{
     Message *m;
     long msg_id;
 } dfs_utils;
 
-void *dfs(void *params){
+void *dfs(void *params)
+{
 
     dfs_utils *utils = (dfs_utils *)params;
     Message *m = utils->m;
     long msg_id = utils->msg_id;
 
     // Generate a key for the shared memory segment
-	key_t shkey = ftok("shmfile", m->payload.sequence_number);
+    key_t shkey = ftok("shmfile", m->payload.sequence_number);
 
-	// Get the shared memory segment
-	int shmid = shmget(shkey, sizeof(SharedData), 0666);
+    // Get the shared memory segment
+    int shmid = shmget(shkey, sizeof(SharedData), 0666);
 
-	// Attach the shared memory segment to the process
-	SharedData *data = (SharedData *)shmat(shmid, NULL, 0);
+    // Attach the shared memory segment to the process
+    SharedData *data = (SharedData *)shmat(shmid, NULL, 0);
     int start = data->nodes;
     start--;
 
+    shmdt(data);
     int n;
     int **Adj = read_file(m->payload.graph_file_name, &n);
 
     Util *util = (Util *)malloc(sizeof(Util));
     int *vis = (int *)malloc(n * sizeof(int));
     util->Vis = vis;
-    for (int i = 0; i < n; i++){
+    for (int i = 0; i < n; i++)
+    {
         util->Vis[i] = 0;
     }
     util->Adj = Adj;
@@ -184,14 +192,15 @@ void *dfs(void *params){
     fflush(stdout);
 
     pthread_t tid;
-    pthread_create(&tid, NULL, recursion, (void *) util);
+    pthread_create(&tid, NULL, recursion, (void *)util);
 
     pthread_join(tid, NULL);
 
     int count = 0;
     for (int i = 0; i < n; i++)
     {
-        if(res[i]!=-1){
+        if (res[i] != -1)
+        {
             count++;
         }
     }
@@ -215,17 +224,18 @@ void *dfs(void *params){
     }
 
     printf(
-        "\nSent message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n",send.mtype ,send.payload.sequence_number, send.payload.operation_number, send.payload.graph_file_name);
+        "\nSent message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n", send.mtype, send.payload.sequence_number, send.payload.operation_number, send.payload.graph_file_name);
     printf("Res: \n");
-    for (int i = 0; i < send.payload.sequence_number; i++){
+    for (int i = 0; i < send.payload.sequence_number; i++)
+    {
         printf("%d ", send.payload.result[i]);
     }
 
-        fflush(stdout);
+    fflush(stdout);
 }
 
-
-typedef struct bfsprops {
+typedef struct bfsprops
+{
     int *queue;
     int *frontBack;
     int **Adj;
@@ -234,7 +244,8 @@ typedef struct bfsprops {
     int n;
 } bfsprops;
 
-void *handleBfs(void *props){
+void *handleBfs(void *props)
+{
 
     bfsprops *BfsProps = (bfsprops *)props;
     int *queue = BfsProps->queue;
@@ -250,7 +261,8 @@ void *handleBfs(void *props){
 
     for (int i = 0; i < n; i++)
     {
-        if(res[i]==-1){
+        if (res[i] == -1)
+        {
             res[i] = u + 1;
             break;
         }
@@ -258,36 +270,37 @@ void *handleBfs(void *props){
 
     frontBack[1] += 1;
 
-
     for (int v = 0; v < n; v++)
     {
-        if(Adj[u][v] && !Vis[v]){
-
+        if (Adj[u][v] && !Vis[v])
+        {
 
             // Push
             queue[frontBack[0]] = v;
             frontBack[0] += 1;
             Vis[v] = 1;
-
         }
     }
 
     fflush(stdout);
 }
 
-void *bfs(void *params){
+void *bfs(void *params)
+{
     dfs_utils *utils = (dfs_utils *)params;
     Message *m = utils->m;
     long msg_id = utils->msg_id;
 
     // Generate a key for the shared memory segment
-	key_t shkey = ftok("shmfile", m->payload.sequence_number);
+    key_t shkey = ftok("shmfile", m->payload.sequence_number);
 
-	// Get the shared memory segment
-	int shmid = shmget(shkey, sizeof(SharedData), 0666);
+    // Get the shared memory segment
+    int shmid = shmget(shkey, sizeof(SharedData), 0666);
 
-	// Attach the shared memory segment to the process
-	SharedData *data = (SharedData *)shmat(shmid, NULL, 0);
+    // Attach the shared memory segment to the process
+    SharedData *data = (SharedData *)shmat(shmid, NULL, 0);
+
+    shmdt(data);
 
     int start = data->nodes;
     start--;
@@ -296,12 +309,13 @@ void *bfs(void *params){
     int **Adj = read_file(m->payload.graph_file_name, &n);
 
     int *Vis = (int *)malloc(n * sizeof(int));
-    for (int i = 0; i < n; i++){
+    for (int i = 0; i < n; i++)
+    {
         Vis[i] = 0;
     }
 
     int *res = malloc(n * sizeof(int));
-    
+
     for (int i = 0; i < n; i++)
     {
         res[i] = -1;
@@ -317,7 +331,8 @@ void *bfs(void *params){
 
     int idx = 0;
 
-    while(frontBack[0] != frontBack[1]){
+    while (frontBack[0] != frontBack[1])
+    {
 
         int len = frontBack[0] - frontBack[1];
 
@@ -326,7 +341,7 @@ void *bfs(void *params){
         for (int i = 0; i < len; i++)
         {
             fflush(stdout);
-            bfsprops *props = (bfsprops*) malloc(sizeof(bfsprops));
+            bfsprops *props = (bfsprops *)malloc(sizeof(bfsprops));
             props->Adj = Adj;
             props->frontBack = frontBack;
             props->res = res;
@@ -366,9 +381,10 @@ void *bfs(void *params){
     }
 
     printf(
-        "\nSent message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n",send.mtype ,send.payload.sequence_number, send.payload.operation_number, send.payload.graph_file_name);
+        "\nSent message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n", send.mtype, send.payload.sequence_number, send.payload.operation_number, send.payload.graph_file_name);
     printf("Res: \n");
-    for (int i = 0; i < send.payload.sequence_number; i++){
+    for (int i = 0; i < send.payload.sequence_number; i++)
+    {
         printf("%d ", send.payload.result[i]);
     }
 
@@ -416,16 +432,17 @@ int main(int argc, char *argv[])
         // Receive a message from the message queue
         Message m;
         // Receive Message;
-		int fetchRes = msgrcv(msg_id, &m, sizeof(m.payload), SERVER_NUMBER + 2, 0);
+        int fetchRes = msgrcv(msg_id, &m, sizeof(m.payload), SERVER_NUMBER + 2, 0);
 
-		// Error Handling
-		if (fetchRes == -1)
-		{
-			perror("Secondary Server could not receive message");
-			exit(1);
-		}
+        // Error Handling
+        if (fetchRes == -1)
+        {
+            perror("Secondary Server could not receive message");
+            exit(1);
+        }
 
-        if(m.payload.sequence_number == INT_MAX){
+        if (m.payload.sequence_number == INT_MAX)
+        {
             for (int i = 0; i < idx; i++)
             {
                 pthread_join(threads[i], NULL);
@@ -433,7 +450,8 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
-        if(m.payload.operation_number == 3){
+        if (m.payload.operation_number == 3)
+        {
             pthread_t tid;
             dfs_utils dfsutils;
             dfsutils.m = &m;
@@ -441,7 +459,8 @@ int main(int argc, char *argv[])
             pthread_create(&tid, NULL, dfs, (void *)&dfsutils);
             threads[idx++] = tid;
         }
-        else if(m.payload.operation_number == 4){
+        else if (m.payload.operation_number == 4)
+        {
             pthread_t tid;
             dfs_utils dfsutils;
             dfsutils.m = &m;

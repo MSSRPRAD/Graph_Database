@@ -19,8 +19,8 @@ typedef struct Payload
 {
     int sequence_number;
     int operation_number;
-    char graph_file_name[50];
-    int result[50];
+    char graph_file_name[1024];
+    int result[1024];
 } Payload;
 
 // Message Structure Definition
@@ -141,6 +141,10 @@ int main()
             exit(1);
         }
 
+        if (reply.payload.operation_number == 1 || reply.payload.operation_number == 2)
+        {
+            printf("%s\n", reply.payload.graph_file_name);
+        }
         if (reply.payload.operation_number == 3)
         {
             printf("Vertices at end of all paths of DFS are:\n");

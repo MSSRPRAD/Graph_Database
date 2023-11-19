@@ -11,8 +11,8 @@ typedef struct Payload
 {
     int sequence_number;
     int operation_number;
-    char graph_file_name[50];
-    int result[50];
+    char graph_file_name[1024];
+    int result[1024];
 } Payload;
 
 // Message Structure Definition
@@ -52,7 +52,8 @@ int main()
             Message m;
             m.mtype = 1;
             m.payload.sequence_number = INT_MAX;
-
+            m.payload.operation_number = 0;
+            strcpy(m.payload.graph_file_name, "hello");
             // Send message
             int sendRes = msgsnd(msgid, &m, sizeof(m), 0);
 
@@ -62,7 +63,7 @@ int main()
                 perror("Cleanup could not send message to message queue.");
                 exit(1);
             }
-            
+
             exit(0);
         }
         else if (strcmp(terminate, "N") == 0)

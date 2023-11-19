@@ -12,17 +12,17 @@
 
 typedef struct Payload
 {
-    int sequence_number;
-    int operation_number;
-    char graph_file_name[50];
-    int result[50];
+	int sequence_number;
+	int operation_number;
+	char graph_file_name[1024];
+	int result[1024];
 } Payload;
 
 // Message Structure Definition
 typedef struct Message
 {
-    long mtype;
-    Payload payload;
+	long mtype;
+	Payload payload;
 } Message;
 
 // pthread_mutex_t writeLock;
@@ -62,14 +62,16 @@ int main(int argc, char *argv[])
 		// Error Handling
 		if (fetchRes == -1)
 		{
+			msgctl(msg_id, IPC_RMID, NULL);
 			perror("Load Balancer could not receive message");
 			exit(1);
 		}
 
-		 printf(
-            "\nRecieved message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n",m.mtype ,m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
+		printf(
+			"\nRecieved message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n", m.mtype, m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
 
-		if(m.payload.sequence_number == INT_MAX){
+		if (m.payload.sequence_number == INT_MAX)
+		{
 			m.mtype = 2;
 			int sendRes = msgsnd(msg_id, &m, sizeof(m.payload), 0);
 
@@ -104,13 +106,16 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 
-		if(m.payload.operation_number == 1 || m.payload.operation_number == 2){
+		if (m.payload.operation_number == 1 || m.payload.operation_number == 2)
+		{
 			m.mtype = 2;
 		}
-		else if(m.payload.sequence_number % 2){
+		else if (m.payload.sequence_number % 2)
+		{
 			m.mtype = 3;
 		}
-		else{
+		else
+		{
 			m.mtype = 4;
 		}
 
@@ -124,8 +129,8 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		 printf(
-            "\n Sent message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n",m.mtype ,m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
+		printf(
+			"\n Sent message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n", m.mtype, m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
 
 		// 	// Payload p = m.payload;
 
@@ -148,7 +153,7 @@ int main(int argc, char *argv[])
 // int HandleRequest(void *params)
 // {
 // 	struct ThreadParams *threadParams = (struct ThreadParams *)params;
-	
+
 // 	Message m = threadParams->m;
 // 	int msg_id = threadParams->msg_id;
 // 	// int reader;

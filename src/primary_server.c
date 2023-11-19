@@ -20,8 +20,8 @@ typedef struct Payload
 {
 	int sequence_number;
 	int operation_number;
-	char graph_file_name[50];
-	int result[50];
+	char graph_file_name[1024];
+	int result[1024];
 } Payload;
 
 // Message Structure Definition
@@ -169,14 +169,13 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-
-
-		if(m.payload.sequence_number==INT_MAX){
-		for (int i = 0; i < idx; i++)
+		if (m.payload.sequence_number == INT_MAX)
 		{
-			pthread_join(threads[i], NULL);
-		}
-		exit(0);
+			for (int i = 0; i < idx; i++)
+			{
+				pthread_join(threads[i], NULL);
+			}
+			exit(0);
 		}
 
 		printf("\nReceived message with: \nMessage Type: %d\nSequence Number:%d \nOperation Number:%d \nFile Name:%s\n", m.mtype, m.payload.sequence_number, m.payload.operation_number, m.payload.graph_file_name);
